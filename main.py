@@ -84,9 +84,6 @@ def set_material_for_collection(all_obj_objects: List[bpy.types.Object]):
     if all_obj_objects is None:
         all_obj_objects = bpy.data.collections.get("Collection")
 
-    # This flag tells us if we have a material from our first object.
-    first_mat_selected = False
-
     # This is the selected global material to apply to everyone
     hair_mat = bpy.data.materials.get("Hair")
 
@@ -113,25 +110,6 @@ def set_material_for_collection(all_obj_objects: List[bpy.types.Object]):
 
     for obj in all_obj_objects:
         if "simulation_output" in obj.name:
-            # Get the first material
-            # if not first_mat_selected:
-            #     # This _should_ only have one slot for simple default materials, this will
-            #     # very likely melt down if we do something fancier here.
-            #     for slot in obj.material_slots:
-            #         first_mat_selected = True
-            #         global_mat = slot.material
-
-            #         # Failsafe, explode to console to make sure we can debug this.
-            #         if global_mat is None:
-            #             dbg_print("Something has gone horribly wrong")
-            #             dbg_print("material slots:")
-            #             dbg_print(slot)
-            #             dbg_print("are the objects valid?")
-            #             dbg_print("len")
-            #             dbg_print(len(all_obj_objects))
-            #             dbg_print(all_obj_objects)
-            # else:
-            # Set it to everyone else
             for slot in obj.material_slots:
                 slot.material = hair_mat
 
