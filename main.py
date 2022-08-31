@@ -285,7 +285,6 @@ def make_emission_material(asset_objs: List[bpy.types.Object]):
 
     # This is a bit brittle, but for now find the assets/light and assign the material
     for obj in asset_objs:
-        print("name", obj.name)
         if obj.name == "assets/light":
             for slot in obj.material_slots:
                 slot.material = mat_light
