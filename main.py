@@ -207,6 +207,7 @@ def place_camera(loc: Tuple[float, float, float], rot: Tuple[float, float, float
     cam_data = bpy.data.cameras.new("Camera")
     cam_obj = bpy.data.objects.new("Camera", object_data=cam_data)
     bpy.context.view_layer.active_layer_collection.collection.objects.link(cam_obj)
+    bpy.context.scene.camera = cam_obj
     cam_obj.location = loc
     cam_obj.rotation_euler = rot
 

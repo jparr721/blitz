@@ -130,3 +130,6 @@ dmypy.json
 
 # The test output
 test/*
+
+# Ignore blend files generates
+*.blend
