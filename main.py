@@ -291,7 +291,9 @@ def make_emission_material(asset_objs: List[bpy.types.Object]):
 
 
 def help():
-    print("usage: blender -b sim.blend -P main.py -- root_dir_name")
+    print(
+        "usage: blender -b sim.blend -P main.py -- root_dir_name [optional] --cam_loc=x,y,z, --cam_rot=x,y,z (deg)"
+    )
 
 
 if __name__ == "__main__":
@@ -307,6 +309,15 @@ if __name__ == "__main__":
         print(sys.argv.index("--"))
         help()
         exit(1)
+
+    for opt in sys.argv:
+        if "--cam_loc" in opt:
+            cam_loc_str = opt.split("=")[1]
+            cam_loc = tuple(map(float, cam_loc_str.split(",")))
+
+        if "--cam_rot" in opt:
+            cam_rot_str = opt.split("=")[1]
+            cam_rot = tuple(map(math.radians, map(float, cam_rot_str.split(","))))
 
     bpy.ops.scene.new()
     root_dir = sys.argv[sys.argv.index("--") + 1]
@@ -346,7 +357,7 @@ if __name__ == "__main__":
     # Always use GPU
     bpy.context.scene.cycles.device = "GPU"
 
-    # Save
+    # Save when the background flag is set
     if "-b" in sys.argv:
         bpy.ops.wm.save_as_mainfile(
             filepath=os.path.join(os.path.dirname(__file__), "sim.blend")
