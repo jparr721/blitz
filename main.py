@@ -43,35 +43,7 @@ def dbg_print(data: Any):
                 bpy.ops.console.scrollback_append(override, text=str(data), type="OUTPUT")
 
 
-def fetch_obj_file_paths(root_dir: str) -> List[str]:
-    """Fetch the OBJ files from the root_dir path. Right now this operates on the
-    assumption that the file name starts with "simulaton_output", so this needs to change
-    in the event we change that.
-
-    Returns:
-        List[str]: The sorted list of file paths.
-            Note: This relies on the code doing the naming properly in HOBAK.
-            Please see the "formatFrameNumber" method in the cpp code of
-            "SIMULATION_SCENE.h"
-    """
-    if not os.path.exists(root_dir):
-        raise RuntimeError(f"{root_dir} does not exist!")
-
-    # Turn the map object into a list
-    return list(
-        # Map the filename to the entire path to simplify loading
-        map(
-            lambda p: os.path.join(root_dir, p),
-            # Sort the files by frame
-            sorted(
-                # Filter files that start with "simulation_output" from
-                filter(lambda p: p.endswith(".obj"), os.listdir(root_dir))
-            ),
-        )
-    )
-
-
-def set_material_for_collection(all_obj_objects: List[bpy.types.Object]):
+def make_hair_material(obj: bpy.types.Object):
     """Sets the material for the collection from the FIRST object. The material can be
     changed in the blender UI from here and apply to everyone.
 
@@ -81,9 +53,6 @@ def set_material_for_collection(all_obj_objects: List[bpy.types.Object]):
             have the objects. Never fear! This code will fetch the objects from the
             collection for you, so just pass "None" when calling and it'll do the rest.
     """
-    if all_obj_objects is None:
-        all_obj_objects = bpy.data.collections.get("Collection")
-
     # This is the selected global material to apply to everyone
     hair_mat = bpy.data.materials.get("Hair")
 
@@ -108,13 +77,12 @@ def set_material_for_collection(all_obj_objects: List[bpy.types.Object]):
     # Set the connections
     hair_mat.node_tree.links.new(hair_shader.outputs[0], output_shader.inputs[0])
 
-    for obj in all_obj_objects:
-        if "simulation_output" in obj.name:
-            for slot in obj.material_slots:
-                slot.material = hair_mat
+    if "simulation_output" in obj.name:
+        for slot in obj.material_slots:
+            slot.material = hair_mat
 
 
-def load_obj_files(obj_file_paths: List[str]) -> List[bpy.types.Object]:
+def load_obj_file(path: str) -> bpy.types.Object:
     """Loads the obj files into memory as blender obj objects.
 
     Args:
@@ -123,40 +91,38 @@ def load_obj_files(obj_file_paths: List[str]) -> List[bpy.types.Object]:
     Returns:
         List[bpy.types.Object]: The loaded obj files as blender objects
     """
-    objects = []
-    for p in obj_file_paths:
-        bpy.ops.object.select_all(action="DESELECT")
-        bpy.ops.import_scene.obj(
-            filepath=p,
-            filter_glob="*.obj;*.mtl",
-            use_edges=True,
-            use_smooth_groups=True,
-            use_split_objects=True,
-            use_split_groups=True,
-            use_groups_as_vgroups=False,
-            use_image_search=True,
-            split_mode="ON",
-            axis_forward="Z",
-            axis_up="Y",
-        )
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.ops.import_scene.obj(
+        filepath=path,
+        filter_glob="*.obj;*.mtl",
+        use_edges=True,
+        use_smooth_groups=True,
+        use_split_objects=True,
+        use_split_groups=True,
+        use_groups_as_vgroups=False,
+        use_image_search=True,
+        split_mode="ON",
+        axis_forward="Z",
+        axis_up="Y",
+    )
 
-        # Selected object is the first one, append to our cache
-        obj = bpy.context.selected_objects[0]
-        name = p.split(".obj")[0]
-        obj.name = name
-        obj.data.name = name
-        objects.append(obj)
-    return objects
+    # Selected object is the first one, append to our cache
+    obj = bpy.context.selected_objects[0]
+    name = path.split(".obj")[0]
+    obj.name = name
+    obj.data.name = name
+    return obj
 
 
-def scale_assets(
-    all_obj_objects: List[bpy.types.Object], all_asset_obj_objects: List[bpy.types.Object]
-):
+def load_obj_files(paths: List[str]) -> List[bpy.types.Object]:
+    return [load_obj_file(p) for p in paths]
 
+
+def scale_assets(oobj: bpy.types.Object, asset_objs: List[bpy.types.Object]):
     xpts = []
     ypts = []
     zpts = []
-    for bb in all_obj_objects[0].bound_box:
+    for bb in oobj.bound_box:
         xpts.append(bb[0])
         ypts.append(bb[1])
         zpts.append(bb[2])
@@ -165,27 +131,25 @@ def scale_assets(
     y = max(ypts) - min(ypts)
     z = max(zpts) - min(zpts)
 
-    for obj in all_asset_obj_objects:
-        print("scaling", obj.data.name)
+    for aobj in asset_objs:
+        print("scaling", aobj.data.name)
 
         # Increase the size of the backdrop to match the dims
-        if obj.data.name == "assets/backdrop":
-            obj.dimensions = (x * 3, y * 2.5, z * 1.5)
+        if aobj.data.name == "assets/backdrop":
+            aobj.dimensions = (x * 3, y * 2.5, z * 1.5)
 
         # Increase the size of the light
-        if obj.data.name == "assets/light":
+        if aobj.data.name == "assets/light":
             scale = 0.5
-            _, y, _ = all_obj_objects[0].dimensions
-            obj.dimensions = (x * scale, y, z * scale)
+            _, y, _ = oobj.dimensions
+            aobj.dimensions = (x * scale, y, z * scale)
 
 
-def position_assets(
-    all_obj_objects: List[bpy.types.Object], all_asset_obj_objects: List[bpy.types.Object]
-):
+def position_assets(oobj: bpy.types.Object, asset_objs: List[bpy.types.Object]):
     xpts = []
     ypts = []
     zpts = []
-    for bb in all_obj_objects[0].bound_box:
+    for bb in oobj.bound_box:
         xpts.append(bb[0])
         ypts.append(bb[1])
         zpts.append(bb[2])
@@ -194,7 +158,7 @@ def position_assets(
     y = max(ypts) - min(ypts)
     z = max(zpts) - min(zpts)
 
-    for obj in all_asset_obj_objects:
+    for obj in asset_objs:
         print("positioning", obj.data.name)
         if obj.data.name == "assets/backdrop":
             obj.location = (-x * 0.5, y, z * 0.1)
@@ -212,6 +176,7 @@ def place_camera(loc: Tuple[float, float, float], rot: Tuple[float, float, float
     cam_obj.rotation_euler = rot
 
 
+## UNUSED
 def build_animation_from_obj_files(all_obj_objects: List[bpy.types.Object]):
     """Loads a sequence of loaded blender objects and adds them to a given animation
 
@@ -253,7 +218,7 @@ def build_animation_from_obj_files(all_obj_objects: List[bpy.types.Object]):
     # Now, set the material for all of the obj files to be the first one. From here, you
     # can edit just one material to make everything look the same.
     print("setting materials")
-    set_material_for_collection(all_obj_objects)
+    make_hair_material(all_obj_objects)
 
 
 def make_emission_material(asset_objs: List[bpy.types.Object]):
@@ -293,40 +258,55 @@ def make_emission_material(asset_objs: List[bpy.types.Object]):
 
 def help():
     print(
-        "usage: blender -b sim.blend -P main.py -- root_dir_name [optional] --cam_loc=x,y,z, --cam_rot=x,y,z (deg)"
+        "usage: blender -b sim.blend -P main.py -- root_dir_name [optional] --cam_loc=x,y,z, --cam_rot=x,y,z (deg) file1 file2 file3"
     )
+
+
+class args:
+    def __init__(self):
+        self.cam_loc: Tuple[float, float]
+        self.cam_rot: Tuple[float, float]
+        self.obj_file: str = ""
+
+    def __repr__(self):
+        items = ("%s = %r" % (k, v) for k, v in self.__dict__.items())
+        return "<%s: {%s}>" % (self.__class__.__name__, ", ".join(items))
+
+
+def parse_args(argv: List[str]):
+    if "--" not in sys.argv:
+        help()
+        exit(1)
+
+    a = args()
+    for opt in argv:
+        # Assumed to be an obj file
+        if opt.endswith(".obj"):
+            a.obj_file = opt
+        if "--cam_loc" in opt:
+            cam_loc_str = opt.split("=")[1]
+            cam_loc = tuple(map(float, cam_loc_str.split(",")))
+            a.cam_loc = cam_loc
+
+        if "--cam_rot" in opt:
+            cam_rot_str = opt.split("=")[1]
+            cam_rot = tuple(map(math.radians, map(float, cam_rot_str.split(","))))
+            a.cam_rot = cam_rot
+    return a
 
 
 if __name__ == "__main__":
     cam_loc = (-32, 161.5, 73)
     cam_rot = (math.radians(75), 0, math.radians(180))
-
-    if "--" not in sys.argv:
-        print(sys.argv)
-        help()
-        exit(1)
-
-    if sys.argv.index("--") == len(sys.argv):
-        print(sys.argv.index("--"))
-        help()
-        exit(1)
-
-    for opt in sys.argv:
-        if "--cam_loc" in opt:
-            cam_loc_str = opt.split("=")[1]
-            cam_loc = tuple(map(float, cam_loc_str.split(",")))
-
-        if "--cam_rot" in opt:
-            cam_rot_str = opt.split("=")[1]
-            cam_rot = tuple(map(math.radians, map(float, cam_rot_str.split(","))))
+    a = parse_args(sys.argv)
 
     bpy.ops.scene.new()
-    root_dir = sys.argv[sys.argv.index("--") + 1]
-    print(f"starting up animation file loader on dir {root_dir}")
-    root_dir_obj_paths = fetch_obj_file_paths(root_dir)
-    root_dir_objs = load_obj_files(root_dir_obj_paths)
+    print(f"Loading animation on file {a.obj_file}")
+
+    root_dir_obj = load_obj_file(a.obj_file)
+
     # Put the backdrop and light in the scene
-    build_animation_from_obj_files(root_dir_objs)
+    # build_animation_from_obj_files(root_dir_objs)
 
     print("loading other assets")
 
@@ -341,8 +321,8 @@ if __name__ == "__main__":
     bpy.ops.object.select_all(action="DESELECT")
 
     # Move the assets and make them fit the mesh
-    scale_assets(root_dir_objs, asset_objs)
-    position_assets(root_dir_objs, asset_objs)
+    scale_assets(root_dir_obj, asset_objs)
+    position_assets(root_dir_obj, asset_objs)
 
     # Now that the assets are in, make the light source
     print("making the emission material")
@@ -361,7 +341,9 @@ if __name__ == "__main__":
     # Save when the background flag is set
     if "-b" in sys.argv:
         bpy.ops.wm.save_as_mainfile(
-            filepath=os.path.join(os.path.dirname(__file__), "sim.blend")
+            filepath=os.path.join(
+                os.path.dirname(__file__), a.obj_file.split(".obj")[0] + ".blend"
+            )
         )
 
     print("done loading animation")
