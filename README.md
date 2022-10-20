@@ -12,5 +12,5 @@ $ find . test/ | xargs -n1 -P10 blender -b -P main.py --
 ```
 This will generate all of your files in whatever directory that you have. To render them, simply do the following:
 ```bash
-$ for i in $(find .blend test/) | xargs -n1 -P10 blender -b $i -E CYCLES -o //$i -a
+$ for i in $(find . -type f -name \*.blend); do blender -b $i -f 1 -E CYCLES -o "//renders_$i" -- --cycles-device=OPTIX; done
 ```
