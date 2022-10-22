@@ -135,11 +135,11 @@ def scale_assets(oobj: bpy.types.Object, asset_objs: List[bpy.types.Object]):
         print("scaling", aobj.data.name)
 
         # Increase the size of the backdrop to match the dims
-        if aobj.data.name == "assets/backdrop":
+        if "assets/backdrop" in aobj.data.name:
             aobj.dimensions = (x * 3, y * 2.5, z * 1.5)
 
         # Increase the size of the light
-        if aobj.data.name == "assets/light":
+        if "assets/light" in aobj.data.name:
             scale = 0.5
             _, y, _ = oobj.dimensions
             aobj.dimensions = (x * scale, y, z * scale)
@@ -160,10 +160,10 @@ def position_assets(oobj: bpy.types.Object, asset_objs: List[bpy.types.Object]):
 
     for obj in asset_objs:
         print("positioning", obj.data.name)
-        if obj.data.name == "assets/backdrop":
+        if "assets/backdrop" in obj.data.name:
             obj.location = (-x * 0.5, y, z * 0.1)
 
-        if obj.data.name == "assets/light":
+        if "assets/light" in obj.data.name:
             obj.location = (-x * 0.5, y, z * 1.2)
 
 
@@ -251,7 +251,7 @@ def make_emission_material(asset_objs: List[bpy.types.Object]):
 
     # This is a bit brittle, but for now find the assets/light and assign the material
     for obj in asset_objs:
-        if obj.name == "assets/light":
+        if "assets/light" in obj.name:
             for slot in obj.material_slots:
                 slot.material = mat_light
 
