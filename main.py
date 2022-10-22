@@ -310,13 +310,16 @@ if __name__ == "__main__":
 
     print("loading other assets")
 
+    assets_directory_path = os.path.join(os.path.dirname(__file__), "assets")
+
     # Path to the assets dir obj files
     asset_file_paths = list(
         map(
-            lambda x: os.path.join(os.path.dirname(__file__), "assets/", x),
-            filter(lambda x: x.endswith(".obj"), os.listdir("assets")),
+            lambda x: os.path.join(assets_directory_path, x),
+            filter(lambda x: x.endswith(".obj"), assets_directory_path),
         )
     )
+    print(f"[dbg]: Asset files found {asset_file_paths}")
     asset_objs = load_obj_files(asset_file_paths)
     bpy.ops.object.select_all(action="DESELECT")
 
