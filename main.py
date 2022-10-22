@@ -311,12 +311,13 @@ if __name__ == "__main__":
     print("loading other assets")
 
     assets_directory_path = os.path.join(os.path.dirname(__file__), "assets")
+    print("looking in assets dir", assets_directory_path)
 
     # Path to the assets dir obj files
     asset_file_paths = list(
         map(
             lambda x: os.path.join(assets_directory_path, x),
-            filter(lambda x: x.endswith(".obj"), assets_directory_path),
+            filter(lambda x: x.endswith(".obj"), os.listdir(assets_directory_path)),
         )
     )
     print(f"[dbg]: Asset files found {asset_file_paths}")
