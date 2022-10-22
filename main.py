@@ -77,7 +77,8 @@ def make_hair_material(obj: bpy.types.Object):
     # Set the connections
     hair_mat.node_tree.links.new(hair_shader.outputs[0], output_shader.inputs[0])
 
-    if "simulation_output" in obj.name:
+    # TODO THIS DOES NOT WORK VERY WELL
+    if "tight_curls" in obj.name:
         for slot in obj.material_slots:
             slot.material = hair_mat
 
