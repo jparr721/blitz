@@ -313,7 +313,7 @@ if __name__ == "__main__":
     # Path to the assets dir obj files
     asset_file_paths = list(
         map(
-            lambda x: os.path.join("assets/" + x),
+            lambda x: os.path.join(os.path.dirname(__file__), "assets/", x),
             filter(lambda x: x.endswith(".obj"), os.listdir("assets")),
         )
     )
