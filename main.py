@@ -297,7 +297,7 @@ def parse_args(argv: List[str]):
 
 
 if __name__ == "__main__":
-    cam_loc = (-32, 161.5, 73)
+    cam_loc = (-32, 212.5, 93)
     cam_rot = (math.radians(75), 0, math.radians(180))
     a = parse_args(sys.argv)
 
@@ -342,6 +342,12 @@ if __name__ == "__main__":
 
     # Always use GPU
     bpy.context.scene.cycles.device = "GPU"
+
+    # Speed up the render time (Shut these off to make it higher fidelity)
+    bpy.context.scene.cycles.samples = 256
+    bpy.context.scene.cycles.max_bounces = 6
+    bpy.context.scene.frame_end = 1
+    bpy.context.scene.render.resolution_percentage = 50
 
     # Save when the background flag is set
     if "-b" in sys.argv:
