@@ -306,12 +306,15 @@ if __name__ == "__main__":
 
     root_dir_obj = load_obj_file(a.obj_file)
 
+    # Make the hair material something other than the default grey
+    make_hair_material(root_dir_obj)
+
     # Put the backdrop and light in the scene
     # build_animation_from_obj_files(root_dir_objs)
 
     print("loading other assets")
-
     assets_directory_path = os.path.join(os.path.dirname(__file__), "assets")
+
     print("looking in assets dir", assets_directory_path)
 
     # Path to the assets dir obj files
@@ -343,11 +346,12 @@ if __name__ == "__main__":
     # Always use GPU
     bpy.context.scene.cycles.device = "GPU"
 
-    # Speed up the render time (Shut these off to make it higher fidelity)
-    bpy.context.scene.cycles.samples = 256
+    # Tuning these parameters will give you faster or slower renders
+    bpy.context.scene.cycles.samples = 1024
     bpy.context.scene.cycles.max_bounces = 6
     bpy.context.scene.frame_end = 1
-    bpy.context.scene.render.resolution_percentage = 50
+    # Turn this on for faster renders
+    # bpy.context.scene.render.resolution_percentage = 50
 
     # Save when the background flag is set
     if "-b" in sys.argv:
